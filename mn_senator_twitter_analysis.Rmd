@@ -1,0 +1,69 @@
+---
+title: "MN State Senate Twitter Analysis"
+author: "Luke Kolar"
+date: "9/18/2020"
+output: html_document
+---
+
+```{r, message = F}
+
+# load twitter library
+library(rtweet)
+
+library(tidyverse)
+library(dplyr)
+library(tidytext)
+
+```
+
+
+```{r}
+
+appname <- "MN State Legislature Analysis"
+
+key <- "PjNwrrwVXORT3T4N14rKrjQUi"
+secret <- "zoXRUIOQ3QGsW4OMzBkDnRcVuatAlROX32KaLoYsQison6sLwR"
+bearertoken <- "AAAAAAAAAAAAAAAAAAAAAFFTHwEAAAAAR2iPm13VvlbUPJ8rFTSO4ZXPN8g%3Dw0GU1WOIaXrQrYYYmgdgKkIJygBfyegPPLMr14Hk2xSXsBzEod"
+
+access_token <- "1246978112493101056-LYYBwBQ1QpNJeZ0NQwVgF4xwmvGGoz"
+access_secret <- "Zdz6E3EXXISBHEym3Hg7NGCf4LsDnMFCwRlFf8G9MwMdZ"
+
+twitter_token <- create_token(
+  app = appname,
+  consumer_key = key,
+  consumer_secret = secret,
+  access_token = access_token,
+  access_secret = access_secret)
+
+
+```
+
+```{r}
+
+tmls <- get_timelines(c("Senmarkjohnson"), n = 300)
+
+tmls %>% 
+  select(!c(user_id, status_id, source,
+            display_text_width, reply_to_user_id,
+            reply_to_status_id, reply_to_screen_name)) %>% 
+  View()
+
+## plot the frequency of tweets for each user over time
+tmls %>%
+  dplyr::filter(created_at > "2017-10-29") %>%
+  dplyr::group_by(screen_name) %>%
+  ts_plot("days", trim = 1L) +
+  ggplot2::geom_point() +
+  ggplot2::theme_minimal() +
+  ggplot2::theme(
+    legend.title = ggplot2::element_blank(),
+    legend.position = "bottom",
+    plot.title = ggplot2::element_text(face = "bold")) +
+  ggplot2::labs(
+    x = NULL, y = NULL,
+    title = "Frequency of Twitter statuses posted by senators",
+    subtitle = "Twitter status (tweet) counts",
+    caption = "\nSource: Data collected from Twitter's REST API via rtweet")
+
+
+```
