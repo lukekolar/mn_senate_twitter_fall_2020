@@ -100,10 +100,11 @@ colnames(dfl_tmls)
 dfl_tmls <- get(load("dfl_tmls.Rdata"))
 dfl_tmls %>% 
   filter(created_at >= "2018-01-03")
-r_tmls %>% 
+tweets_since_aug <- r_tmls %>% rbind(dfl_tmls) %>% 
   filter(created_at >= "2018-01-03") %>% 
   group_by(screen_name) %>% 
-  summarize(tweets = n(),
+  summarize(tweets = n(), rts = sum(is_retweet),
+            quotes = sum(is_quote),
             first.in.set = min(created_at),
             account_created_at = min(account_created_at))
 
@@ -138,8 +139,26 @@ class(head(my_spdf, 2))
   mutate(district = as.character(DISTRICT))
   
 library(broom)
-spdf_fortified <- tidy(my_spdf, region = "DISTRICT")
+spdf_fortified <- tidy(my_spdf)
 
+summary(my_spdf)
+
+library(sf)
+my_sf <- st_as_sf(my_spdf) %>% 
+  mutate(district = as.numeric(as.character(DISTRICT)))
+
+colnames(tweets_since_aug)
+
+colnames(my_sf_senators)
+
+my_sf_senators <- my_sf %>% 
+  full_join(senate_twitters, by = "district") %>% 
+  full_join(tweets_since_aug, by = c("tag" = "screen_name"))
+
+
+
+ggplot(my_sf_senators, aes(fill = account_created_at)) + 
+  geom_sf(color = "white", )
 
 ```
 
