@@ -6,16 +6,13 @@ output: html_document
 ---
 
 ```{r, message = F}
+# Loading necessary packages...
 
-# load twitter library
 library(rtweet)
-
 library(tidyverse)
-library(dplyr)
 library(tidytext)
 
 ```
-
 
 ```{r}
 
@@ -35,12 +32,11 @@ twitter_token <- create_token(
   access_token = access_token,
   access_secret = access_secret)
 
-
 ```
 
 ```{r}
 
-tmls <- get_timelines(c("Senmarkjohnson"), n = 300)
+
 
 tmls %>% 
   select(!c(user_id, status_id, source,
@@ -48,22 +44,122 @@ tmls %>%
             reply_to_status_id, reply_to_screen_name)) %>% 
   View()
 
-## plot the frequency of tweets for each user over time
-tmls %>%
-  dplyr::filter(created_at > "2017-10-29") %>%
-  dplyr::group_by(screen_name) %>%
-  ts_plot("days", trim = 1L) +
-  ggplot2::geom_point() +
-  ggplot2::theme_minimal() +
-  ggplot2::theme(
-    legend.title = ggplot2::element_blank(),
-    legend.position = "bottom",
-    plot.title = ggplot2::element_text(face = "bold")) +
-  ggplot2::labs(
-    x = NULL, y = NULL,
-    title = "Frequency of Twitter statuses posted by senators",
-    subtitle = "Twitter status (tweet) counts",
-    caption = "\nSource: Data collected from Twitter's REST API via rtweet")
+senate_twitters <- read.csv("mn_senate_twitters.csv") %>% 
+  rename(party = party.,
+         senator = senator.name.,
+         district = district.,
+         official = official.,
+         tag = X.official..tag.,
+         link = link., 
+         ver = verified.) %>% 
+  select(district:ver) %>% 
+  select(!X) %>% 
+  filter(!is.na(district))
+
+dfl_senate_twitters <- senate_twitters %>% 
+  filter(party == "DFL", tag != "-")
+r_senate_twitters <- senate_twitters %>% 
+  filter(party == "R", tag != "-")
+
+as.vector(dfl_senate_twitters$tag)
+r_senate_twitters
+
+# original functions to retrieve timelines, n = 300
+dfl_tmls <- get_timelines(as.vector(dfl_senate_twitters$tag), n = 4000)
+r_tmls <- get_timelines(as.vector(r_senate_twitters$tag), n = 4000)
+
+eaton <- get_timelines("EatonSenator", n = 40000)
+eaton %>% 
+  summarize(min = min(created_at))
+
+
+r_tmls %>% group_by(screen_name) %>% 
+  summarize(followers = max(followers_count))
+
+dfl_tmls %>% group_by(screen_name) %>% 
+  filter(created_at >= "2020-08-01") %>% 
+  summarize(n = n(),
+            rts = sum(is_retweet),
+            quotes = sum(is_quote)) %>% 
+  ggplot(aes(x = screen_name, y = n)) + geom_col()
+
+dfl_tmls %>% group_by(screen_name) %>% 
+  filter(created_at >= "2020-08-01") %>% 
+  summarize(n = n())
+
+glimpse(dfl_tmls)
+dfl_tmls %>% 
+  select(created_at:symbols, media_type, lang, quoted_text:retweet_verified, )
+  filter(created_at >= "2018-01-03")
+
+save(dfl_tmls, file = "dfl_tmls.Rdata")
+save(r_tmls, file = "r_tmls.Rdata")
+
+colnames(dfl_tmls)
+
+dfl_tmls <- get(load("dfl_tmls.Rdata"))
+dfl_tmls %>% 
+  filter(created_at >= "2018-01-03")
+r_tmls %>% 
+  filter(created_at >= "2018-01-03") %>% 
+  group_by(screen_name) %>% 
+  summarize(tweets = n(),
+            first.in.set = min(created_at),
+            account_created_at = min(account_created_at))
+
+
+  group_by(screen_name) %>% 
+  summarize(first.in.set = min(created_at),
+            account_created_at = min(account_created_at))
+  ggplot(aes(x = first.in.set, y = 1)) + geom_point()
+
 
 
 ```
+
+```{r}
+install.packages("geojsonio")
+library(geojsonio)
+```
+
+```{r}
+
+library(rgdal)
+
+my_spdf <- readOGR( 
+  dsn = paste0(getwd(),"/S2012/"), 
+  layer = "S2012",
+  verbose = FALSE
+)
+
+plot(my_spdf, col="skyblue", bg="#f2f2f2", lwd=0.25, border=0 )
+
+class(head(my_spdf, 2))
+  mutate(district = as.character(DISTRICT))
+  
+library(broom)
+spdf_fortified <- tidy(my_spdf, region = "DISTRICT")
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
