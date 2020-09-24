@@ -163,10 +163,21 @@ dfl_tmls %>%
 
 st_crs(my_sf_senators)
 
-crs <- "+proj=longlat +datum=WGS84 +no_defs"
+library(rgdal)
+library(raster)
+library(rgeos)
+
+crs(my_sf_senators)
+
+crs_longlat <- "+proj=longlat +datum=WGS84 +no_defs"
+my_sf_senators_longlat <- spTransform(my_sf_senators,
+                                crs_longlat)
+
+?spTransform
 
 ggplot(my_sf_senators, aes(fill = tweets)) + 
-  geom_sf(color = "white", lwd = 0.05)
+  geom_sf(color = "white", lwd = 0.05) + 
+  geom_rect(aes(xmin = -93.8, xmax = - 92.8, ymin = 44.7, ymax = 45.5), color = "black", alpha = 0.5)
 
 ggplot(my_sf_senators, aes(fill = tweets)) + 
   geom_sf(color = "white", lwd = 0.05) +
