@@ -150,15 +150,28 @@ my_sf <- st_as_sf(my_spdf) %>%
 colnames(tweets_since_aug)
 
 colnames(my_sf_senators)
+colnames(dfl_tmls)
 
 my_sf_senators <- my_sf %>% 
   full_join(senate_twitters, by = "district") %>% 
   full_join(tweets_since_aug, by = c("tag" = "screen_name"))
 
+dfl_tmls %>% 
+  filter(verified == "TRUE") %>% 
+  group_by(screen_name) %>% 
+  summarize(n = n())
 
+st_crs(my_sf_senators)
 
-ggplot(my_sf_senators, aes(fill = account_created_at)) + 
-  geom_sf(color = "white", )
+crs <- "+proj=longlat +datum=WGS84 +no_defs"
+
+ggplot(my_sf_senators, aes(fill = tweets)) + 
+  geom_sf(color = "white", lwd = 0.05)
+
+ggplot(my_sf_senators, aes(fill = tweets)) + 
+  geom_sf(color = "white", lwd = 0.05) +
+  coord_sf(crs = crs, xlim = c(-93.8, -92.8), ylim = c(44.7, 45.5)) +
+  ggtitle("Metro Area ")
 
 ```
 
