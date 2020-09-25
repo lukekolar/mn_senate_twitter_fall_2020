@@ -133,18 +133,21 @@ my_spdf <- readOGR(
   verbose = FALSE
 )
 
-plot(my_spdf, col="skyblue", bg="#f2f2f2", lwd=0.25, border=0 )
+my_spdf2 <- spTransform(my_spdf,
+                      CRS("+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0"))
 
-class(head(my_spdf, 2))
+plot(my_spdf2, col="skyblue", bg="#f2f2f2", lwd=0.25, border=0 )
+
+class(head(my_spdf2, 2))
   mutate(district = as.character(DISTRICT))
   
 library(broom)
-spdf_fortified <- tidy(my_spdf)
+spdf_fortified <- tidy(my_spdf2)
 
-summary(my_spdf)
+summary(my_spdf2)
 
 library(sf)
-my_sf <- st_as_sf(my_spdf) %>% 
+my_sf <- st_as_sf(my_spdf2) %>% 
   mutate(district = as.numeric(as.character(DISTRICT)))
 
 colnames(tweets_since_aug)
@@ -166,23 +169,29 @@ st_crs(my_sf_senators)
 library(rgdal)
 library(raster)
 library(rgeos)
+library(cowplot)
+library(rcartocolor)
 
 crs(my_sf_senators)
-
-crs_longlat <- "+proj=longlat +datum=WGS84 +no_defs"
-my_sf_senators_longlat <- spTransform(my_sf_senators,
-                                crs_longlat)
+summary(my_sf_senators)
 
 ?spTransform
 
-ggplot(my_sf_senators, aes(fill = tweets)) + 
-  geom_sf(color = "white", lwd = 0.05) + 
-  geom_rect(aes(xmin = -93.8, xmax = - 92.8, ymin = 44.7, ymax = 45.5), color = "black", alpha = 0.5)
+inset <- ggplot(my_sf_senators, aes()) + 
+  geom_sf(color = "grey30", fill = "white", lwd = 0.25) + 
+  geom_rect(aes(xmin = -93.58, xmax = - 92.8, ymin = 44.7, ymax = 45.15), 
+            color = "red", fill = "NA", alpha = 0.5, lwd = 0.05) + 
+  theme_void()
 
-ggplot(my_sf_senators, aes(fill = tweets)) + 
-  geom_sf(color = "white", lwd = 0.05) +
-  coord_sf(crs = crs, xlim = c(-93.8, -92.8), ylim = c(44.7, 45.5)) +
-  ggtitle("Metro Area ")
+main <- ggplot(my_sf_senators, aes(fill = tweets)) + 
+  geom_sf(color = "grey30", lwd = 0.25) +
+  coord_sf(xlim = c(-93.58, -92.8), ylim = c(44.7, 45.15)) + 
+  theme_void() + scale_fill_gradient(low = "lightyellow", high = "lightskyblue") +
+  geom_sf_text(aes(label = district), colour = "black", size = 3)
+
+ggdraw() +
+  draw_plot(main) +
+  draw_plot(inset, x = 0.02, y = 0.665, width = 0.35, height = 0.35)
 
 ```
 
