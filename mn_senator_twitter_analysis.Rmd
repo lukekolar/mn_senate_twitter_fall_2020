@@ -9,12 +9,23 @@ output: html_document
 # Loading necessary packages...
 
 library(rtweet)
-library(tidyverse)
 library(tidytext)
+
+library(geojsonio)
+library(rgdal)
+library(raster)
+library(rgeos)
+library(cowplot)
+library(rcartocolor)
+
+library(broom)
+library(sf)
+library(tidyverse)
 
 ```
 
 ```{r}
+# Twitter app logisitics
 
 appname <- "MN State Legislature Analysis"
 
@@ -36,14 +47,6 @@ twitter_token <- create_token(
 
 ```{r}
 
-
-
-tmls %>% 
-  select(!c(user_id, status_id, source,
-            display_text_width, reply_to_user_id,
-            reply_to_status_id, reply_to_screen_name)) %>% 
-  View()
-
 senate_twitters <- read.csv("mn_senate_twitters.csv") %>% 
   rename(party = party.,
          senator = senator.name.,
@@ -61,27 +64,9 @@ dfl_senate_twitters <- senate_twitters %>%
 r_senate_twitters <- senate_twitters %>% 
   filter(party == "R", tag != "-")
 
-as.vector(dfl_senate_twitters$tag)
-r_senate_twitters
-
-# original functions to retrieve timelines, n = 300
-dfl_tmls <- get_timelines(as.vector(dfl_senate_twitters$tag), n = 4000)
-r_tmls <- get_timelines(as.vector(r_senate_twitters$tag), n = 4000)
-
-eaton <- get_timelines("EatonSenator", n = 40000)
-eaton %>% 
-  summarize(min = min(created_at))
-
-
-r_tmls %>% group_by(screen_name) %>% 
-  summarize(followers = max(followers_count))
-
-dfl_tmls %>% group_by(screen_name) %>% 
-  filter(created_at >= "2020-08-01") %>% 
-  summarize(n = n(),
-            rts = sum(is_retweet),
-            quotes = sum(is_quote)) %>% 
-  ggplot(aes(x = screen_name, y = n)) + geom_col()
+        # original functions to retrieve timelines
+## dfl_tmls <- get_timelines(as.vector(dfl_senate_twitters$tag), n = 4000)
+## r_tmls <- get_timelines(as.vector(r_senate_twitters$tag), n = 4000)
 
 dfl_tmls %>% group_by(screen_name) %>% 
   filter(created_at >= "2020-08-01") %>% 
@@ -108,24 +93,18 @@ tweets_since_aug <- r_tmls %>% rbind(dfl_tmls) %>%
             first.in.set = min(created_at),
             account_created_at = min(account_created_at))
 
-
+senate_twitters %>% 
   group_by(screen_name) %>% 
   summarize(first.in.set = min(created_at),
             account_created_at = min(account_created_at))
-  ggplot(aes(x = first.in.set, y = 1)) + geom_point()
 
 
 
 ```
 
-```{r}
-install.packages("geojsonio")
-library(geojsonio)
-```
 
 ```{r}
 
-library(rgdal)
 
 my_spdf <- readOGR( 
   dsn = paste0(getwd(),"/S2012/"), 
@@ -166,11 +145,6 @@ dfl_tmls %>%
 
 st_crs(my_sf_senators)
 
-library(rgdal)
-library(raster)
-library(rgeos)
-library(cowplot)
-library(rcartocolor)
 
 crs(my_sf_senators)
 summary(my_sf_senators)
@@ -179,13 +153,13 @@ summary(my_sf_senators)
 
 inset <- ggplot(my_sf_senators, aes()) + 
   geom_sf(color = "grey30", fill = "white", lwd = 0.25) + 
-  geom_rect(aes(xmin = -93.58, xmax = - 92.8, ymin = 44.7, ymax = 45.15), 
+  geom_rect(aes(xmin = -93.58, xmax = - 92.75, ymin = 44.7, ymax = 45.15), 
             color = "red", fill = "NA", alpha = 0.5, lwd = 0.05) + 
   theme_void()
 
 main <- ggplot(my_sf_senators, aes(fill = tweets)) + 
   geom_sf(color = "grey30", lwd = 0.25) +
-  coord_sf(xlim = c(-93.58, -92.8), ylim = c(44.7, 45.15)) + 
+  coord_sf(xlim = c(-93.58, -92.75), ylim = c(44.7, 45.15)) + 
   theme_void() + scale_fill_gradient(low = "lightyellow", high = "lightskyblue") +
   geom_sf_text(aes(label = district), colour = "black", size = 3)
 
