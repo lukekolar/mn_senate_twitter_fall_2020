@@ -104,8 +104,6 @@ senate_twitters %>%
 
 
 ```{r}
-
-
 my_spdf <- readOGR( 
   dsn = paste0(getwd(),"/S2012/"), 
   layer = "S2012",
@@ -117,15 +115,10 @@ my_spdf2 <- spTransform(my_spdf,
 
 plot(my_spdf2, col="skyblue", bg="#f2f2f2", lwd=0.25, border=0 )
 
-class(head(my_spdf2, 2))
-  mutate(district = as.character(DISTRICT))
-  
-library(broom)
 spdf_fortified <- tidy(my_spdf2)
 
 summary(my_spdf2)
 
-library(sf)
 my_sf <- st_as_sf(my_spdf2) %>% 
   mutate(district = as.numeric(as.character(DISTRICT)))
 
@@ -137,19 +130,10 @@ colnames(dfl_tmls)
 my_sf_senators <- my_sf %>% 
   full_join(senate_twitters, by = "district") %>% 
   full_join(tweets_since_aug, by = c("tag" = "screen_name"))
-
-dfl_tmls %>% 
-  filter(verified == "TRUE") %>% 
-  group_by(screen_name) %>% 
-  summarize(n = n())
-
-st_crs(my_sf_senators)
+```
 
 
-crs(my_sf_senators)
-summary(my_sf_senators)
-
-?spTransform
+```{r warning = F, message = F}
 
 inset <- ggplot(my_sf_senators, aes()) + 
   geom_sf(color = "grey30", fill = "white", lwd = 0.25) + 
